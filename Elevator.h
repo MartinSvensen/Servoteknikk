@@ -9,14 +9,14 @@ enum Direction {
 
 class Elevator {
 private:
-    static const int FLOOR_COUNT = 8;
+    static const int FLOOR_COUNT{8};
 
-    int currentFloor;
-    int targetFloor;
-    Direction direction;
+    int currentFloor_;
+    int targetFloor_;
+    Direction direction_;
 
-    bool upRequests[FLOOR_COUNT];
-    bool downRequests[FLOOR_COUNT];
+    bool upRequests_[FLOOR_COUNT];
+    bool downRequests_[FLOOR_COUNT];
 
     bool hasRequestAbove();
     bool hasRequestBelow();

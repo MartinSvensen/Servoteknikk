@@ -1,13 +1,13 @@
 #include "Elevator.h"
 
 Elevator::Elevator() {
-    currentFloor = 0;
-    targetFloor = 0;
-    direction = IDLE;
+    currentFloor_ = 0;
+    targetFloor_ = 0;
+    direction_ = IDLE;
 
     for (int i = 0; i < FLOOR_COUNT; i++) {
-        upRequests[i] = false;
-        downRequests[i] = false;
+        upRequests_[i] = false;
+        downRequests_[i] = false;
     }
 }
 
@@ -15,8 +15,8 @@ Elevator::Elevator() {
 // Hjelpefunksjoner for updateDirection() for å sjekke om det finnes forespørsler over eller under heisen
 
 bool Elevator::hasRequestAbove() {
-    for (int floor = currentFloor + 1; floor < FLOOR_COUNT; floor++) {
-        if (upRequests[floor] || downRequests[floor]) {
+    for (int floor = currentFloor_ + 1; floor < FLOOR_COUNT; floor++) {
+        if (upRequests_[floor] || downRequests_[floor]) {
             return true;
         }
     }
@@ -24,8 +24,8 @@ bool Elevator::hasRequestAbove() {
     return false;
 }
 bool Elevator::hasRequestBelow() {
-    for (int floor = currentFloor - 1; floor >= 0; floor--) {
-        if (upRequests[floor] || downRequests[floor]) {
+    for (int floor = currentFloor_ - 1; floor >= 0; floor--) {
+        if (upRequests_[floor] || downRequests_[floor]) {
             return true;
         }
     }
@@ -41,10 +41,10 @@ void Elevator::addHallRequest(int floor, Direction requestDirection) {
     }
 
     if (requestDirection == UP) {
-        upRequests[floor] = true;
+        upRequests_[floor] = true;
     }
     else if (requestDirection == DOWN) {
-        downRequests[floor] = true;
+        downRequests_[floor] = true;
     }
 }
 void Elevator::addCabinRequest(int floor) {
@@ -52,11 +52,11 @@ void Elevator::addCabinRequest(int floor) {
         return;
     }
 
-    if (floor > currentFloor) {
-        upRequests[floor] = true;
+    if (floor > currentFloor_) {
+        upRequests_[floor] = true;
     }
-    else if (floor < currentFloor) {
-        downRequests[floor] = true;
+    else if (floor < currentFloor_) {
+        downRequests_[floor] = true;
     }
 }
 void Elevator::clearRequest(int floor) {
@@ -64,8 +64,8 @@ void Elevator::clearRequest(int floor) {
         return;
     }
 
-    upRequests[floor] = false;
-    downRequests[floor] = false;
+    upRequests_[floor] = false;
+    downRequests_[floor] = false;
 }
 
 // Brukes når posisjonssystemet har bestemt hvilken etasje heisen er på.
@@ -75,10 +75,10 @@ void Elevator::updateCurrentFloor(int floor) {
         return;
     }
 
-    currentFloor = floor;
+    currentFloor_ = floor;
 }
 int Elevator::getCurrentFloor() {
-    return currentFloor;
+    return currentFloor_;
 }
 
 /*
@@ -91,73 +91,73 @@ endres til å velge retning basert på nærmeste forespørsel.
 */
 
 void Elevator::updateDirection() {
-    if (direction == UP) {
+    if (direction_ == UP) {
         if (hasRequestAbove()) {
             return;
         }
 
         if (hasRequestBelow()) {
-            direction = DOWN;
+            direction_ = DOWN;
         }
         else {
-            direction = IDLE;
+            direction_ = IDLE;
         }
     }
 
-    else if (direction == DOWN) {
+    else if (direction_ == DOWN) {
         if (hasRequestBelow()) {
             return;
         }
 
         if (hasRequestAbove()) {
-            direction = UP;
+            direction_ = UP;
         }
         else {
-            direction = IDLE;
+            direction_ = IDLE;
         }
     }
 
-    else if (direction == IDLE) {
-        for (int floor = currentFloor + 1; floor < FLOOR_COUNT; floor++) {
-            if (upRequests[floor] || downRequests[floor]) {
-                direction = UP;
+    else if (direction_ == IDLE) {
+        for (int floor = currentFloor_ + 1; floor < FLOOR_COUNT; floor++) {
+            if (upRequests_[floor] || downRequests_[floor]) {
+                direction_ = UP;
                 return;
             }
         }
 
-        for (int floor = currentFloor - 1; floor >= 0; floor--) {
-            if (upRequests[floor] || downRequests[floor]) {
-                direction = DOWN;
+        for (int floor = currentFloor_ - 1; floor >= 0; floor--) {
+            if (upRequests_[floor] || downRequests_[floor]) {
+                direction_ = DOWN;
                 return;
             }
         }
     }
 }
 Direction Elevator::getDirection() {
-    return direction;
+    return direction_;
 }
 
 void Elevator::updateTargetFloor() {
-    if (direction == UP) {
-        for (int floor = currentFloor + 1; floor < FLOOR_COUNT; floor++) {
-            if (upRequests[floor] || downRequests[floor]) {
-                targetFloor = floor;
+    if (direction_ == UP) {
+        for (int floor = currentFloor_ + 1; floor < FLOOR_COUNT; floor++) {
+            if (upRequests_[floor] || downRequests_[floor]) {
+                targetFloor_ = floor;
                 return;
             }
         }
     }
 
-    else if (direction == DOWN) {
-        for (int floor = currentFloor - 1; floor >= 0; floor--) {
-            if (upRequests[floor] || downRequests[floor]) {
-                targetFloor = floor;
+    else if (direction_ == DOWN) {
+        for (int floor = currentFloor_ - 1; floor >= 0; floor--) {
+            if (upRequests_[floor] || downRequests_[floor]) {
+                targetFloor_ = floor;
                 return;
             }
         }
     }
 }
 int Elevator::getTargetFloor() {
-    return targetFloor;
+    return targetFloor_;
 }
 
 /*
@@ -171,22 +171,22 @@ dersom det ikke finnes flere forespørsler videre i gjeldende retning.
 */
 
 bool Elevator::shouldStop() {
-    if (direction == UP) {
-        if (upRequests[currentFloor]) {
+    if (direction_ == UP) {
+        if (upRequests_[currentFloor_]) {
             return true;
         }
 
-        if (!hasRequestAbove() && downRequests[currentFloor]) {
+        if (!hasRequestAbove() && downRequests_[currentFloor_]) {
             return true;
         }
     }
 
-    else if (direction == DOWN) {
-        if (downRequests[currentFloor]) {
+    else if (direction_ == DOWN) {
+        if (downRequests_[currentFloor_]) {
             return true;
         }
 
-        if (!hasRequestBelow() && upRequests[currentFloor]) {
+        if (!hasRequestBelow() && upRequests_[currentFloor_]) {
             return true;
         }
     }
