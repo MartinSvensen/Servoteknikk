@@ -1,4 +1,5 @@
 #include "Elevator.h"
+#include <Arduino.h>
 
 Elevator::Elevator() {
     currentFloor_ = 0;
@@ -11,6 +12,17 @@ Elevator::Elevator() {
     }
 }
 
+// Used for debugging, no special use in the final implementation.
+void Elevator::printUpRequests() const {
+    Serial.print("upRequests (etasje 1–8): ");
+
+    for (int i = 0; i < FLOOR_COUNT; ++i) {
+        Serial.print(upRequests_[i] ? 1 : 0);
+        Serial.print(' ');
+    }
+
+    Serial.println();
+}
 
 // Hjelpefunksjoner for updateDirection() for å sjekke om det finnes forespørsler over eller under heisen
 

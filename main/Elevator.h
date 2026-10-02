@@ -24,6 +24,9 @@ private:
 public:
     Elevator();
 
+    // Debugging
+    void printUpRequests() const;
+
     // Requests
     void addHallRequest(int floor, Direction requestDirection);
     void addCabinRequest(int floor);
