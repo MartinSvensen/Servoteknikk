@@ -39,7 +39,7 @@ public:
     void updateDirection();
     Direction getDirection();
 
-    void updateTargetFloor();
+    void updateTargetFloor(long position);
     int getTargetFloor();
 
     // Decision logic

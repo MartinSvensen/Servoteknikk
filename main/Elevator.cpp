@@ -149,10 +149,27 @@ Direction Elevator::getDirection() {
     return direction_;
 }
 
-void Elevator::updateTargetFloor() {
+void Elevator::updateTargetFloor(long position) {
+    const int pulsesPerFloor = 200;
+    long activeTargetPosition = targetFloor_ * pulsesPerFloor;
+
     if (direction_ == UP) {
-        for (int floor = currentFloor_ + 1; floor < FLOOR_COUNT; floor++) {
-            if (upRequests_[floor] || downRequests_[floor]) {
+        for (int floor = 0; floor < FLOOR_COUNT; floor++) {
+            long floorPosition = floor * pulsesPerFloor;
+
+            bool requested =
+                upRequests_[floor] || downRequests_[floor];
+
+            bool ahead = floorPosition > position;
+
+            bool beforeTarget =
+                floorPosition < activeTargetPosition;
+
+            bool choosingNewTarget =
+                targetFloor_ == currentFloor_;
+
+            if (requested && ahead &&
+                (choosingNewTarget || beforeTarget)) {
                 targetFloor_ = floor;
                 return;
             }
@@ -160,14 +177,29 @@ void Elevator::updateTargetFloor() {
     }
 
     else if (direction_ == DOWN) {
-        for (int floor = currentFloor_ - 1; floor >= 0; floor--) {
-            if (upRequests_[floor] || downRequests_[floor]) {
+        for (int floor = FLOOR_COUNT - 1; floor >= 0; floor--) {
+            long floorPosition = floor * pulsesPerFloor;
+
+            bool requested =
+                upRequests_[floor] || downRequests_[floor];
+
+            bool ahead = floorPosition < position;
+
+            bool beforeTarget =
+                floorPosition > activeTargetPosition;
+
+            bool choosingNewTarget =
+                targetFloor_ == currentFloor_;
+
+            if (requested && ahead &&
+                (choosingNewTarget || beforeTarget)) {
                 targetFloor_ = floor;
                 return;
             }
         }
     }
 }
+
 int Elevator::getTargetFloor() {
     return targetFloor_;
 }

@@ -49,7 +49,7 @@ void loop()
         lastUpdate = now;
 
         elevator.updateDirection();
-        elevator.updateTargetFloor();
+        elevator.updateTargetFloor(motor.getPosition());
 
         int targetFloor = elevator.getTargetFloor();
         int targetPosition = targetFloor * 200;
