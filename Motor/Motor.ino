@@ -6,7 +6,7 @@ float integral = 0;
 int error;
 int previousError;
 unsigned long lastTime = micros(); //last time for integration
-int deadBandLimit = 9;
+int deadBandLimit = 10;
 
 void setup() {
   pinMode(7, OUTPUT);
@@ -32,6 +32,9 @@ void loop() {
   //dead band compansation
   if (PID_sum < deadBandLimit) {
     PID_sum = deadBandLimit;
+  } else if (PID_sum > 255) 
+  {
+    PID_sum = 255;
   }
   
   digitalWrite(5, 0);
@@ -59,8 +62,8 @@ void encoderTrack(){
 
 float PID_frame(int setpoint) {
   long int sensor = encoderReadout; //lock in sensor read for this loop iteration
-  float P = 1;
-  float D = 0;
+  float P = 0.9;
+  float D = -100;
   float I = 0;
   int error = sensor - setpoint;
   //P
