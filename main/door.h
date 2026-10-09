@@ -45,6 +45,7 @@ public:
     bool isClosed() const;
     void update();
     bool isMoving() const;
+    bool hasRequest(int floor) const;
 };
 
 #endif

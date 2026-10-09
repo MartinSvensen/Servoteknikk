@@ -28,6 +28,17 @@ void Elevator::printUpRequests() const
     Serial.println();
 }
 
+
+bool Elevator::hasRequest(int floor) const
+{
+    if (floor < 0 || floor >= FLOOR_COUNT)
+    {
+        return false;
+    }
+
+    return upRequests_[floor] || downRequests_[floor];
+}
+
 // Hjelpefunksjoner for updateDirection() for å sjekke om det finnes forespørsler over eller under heisen
 
 bool Elevator::hasRequestAbove()
@@ -189,7 +200,7 @@ Direction Elevator::getDirection()
 
 void Elevator::updateTargetFloor(long position)
 {
-    const int pulsesPerFloor = 200;
+    const int pulsesPerFloor = 2096;
     long activeTargetPosition = targetFloor_ * pulsesPerFloor;
 
     if (direction_ == UP)

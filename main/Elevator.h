@@ -28,6 +28,7 @@ public:
     void printUpRequests() const;
 
     // Requests
+    bool hasRequest(int floor) const;
     void addHallRequest(int floor, Direction requestDirection);
     void addCabinRequest(int floor);
     void clearRequest(int floor);
