@@ -23,6 +23,11 @@ private:
     int halfStepNumber;
     DoorState state;
 
+    int stepsRemaining{0};
+    int stepDirection{1};
+    unsigned long lastStepTime{0};
+    DoorState targetState{CLOSED};
+
     void moveHalfSteps(int numberOfSteps, int direction);
 
 public:
@@ -38,6 +43,8 @@ public:
     DoorState getState() const;
     bool isOpen() const;
     bool isClosed() const;
+    void update();
+    bool isMoving() const;
 };
 
 #endif

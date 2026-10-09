@@ -97,7 +97,7 @@ void Motor::update(int setpoint)
     int motorState = output >= 0 ? HIGH : LOW;
     float pwm = abs(output);
 
-    pwm = constrain(pwm, 10.0f, 255.0f);
+    pwm = constrain(pwm, 10.0f, 100.0f);
 
     digitalWrite(5, LOW);
     digitalWrite(6, motorState);
