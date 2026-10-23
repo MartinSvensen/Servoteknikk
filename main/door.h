@@ -11,24 +11,28 @@ enum DoorState {
 
 class Door {
 private:
-    static const int A_ENABLE = 69;
-    static const int A_PHASE  = 68;
-    static const int B_ENABLE = 67;
-    static const int B_PHASE  = 66;
 
-    static const int STEPS_CLOSED_TO_HALF = 100;
-    static const int STEPS_HALF_TO_OPEN   = 100;
+// 
+    const int A_ENABLE = A15; //Setting DAC pins
+    const int A_PHASE  = A14;
+    const int B_ENABLE = A13;
+    const int B_PHASE  = A12;
+
+    const int stepsPerCycle = 4*8;
+    static const int STEPS_CLOSED_TO_HALF = 400;
+    static const int STEPS_HALF_TO_OPEN   = 400;
     static const int STEPS_CLOSED_TO_OPEN = STEPS_CLOSED_TO_HALF + STEPS_HALF_TO_OPEN;
 
-    int halfStepNumber;
+    int stepNumber;
     DoorState state;
 
     int stepsRemaining{0};
     int stepDirection{1};
     unsigned long lastStepTime{0};
     DoorState targetState{CLOSED};
+    float theta = 0;
 
-    void moveHalfSteps(int numberOfSteps, int direction);
+    void moveSteps(int numberOfSteps, int direction);
 
 public:
     Door();

@@ -1,20 +1,10 @@
 #include "door.h"
 #include "dac.h"
 
-const int halfStepSequence[8][4] = {
-    {HIGH, HIGH, HIGH, HIGH},
-    {LOW,  HIGH, HIGH, HIGH},
-    {HIGH, LOW,  HIGH, HIGH},
-    {HIGH, LOW,  LOW,  HIGH},
-    {HIGH, LOW,  HIGH, LOW},
-    {LOW,  HIGH, HIGH, LOW},
-    {HIGH, HIGH, HIGH, LOW},
-    {HIGH, HIGH, LOW,  HIGH}
-};
 
 Door::Door()
     : state{CLOSED},
-      halfStepNumber{0}
+      stepNumber{0}
 {
 
 }
@@ -28,6 +18,9 @@ void Door::begin()
     pinMode(A_PHASE, OUTPUT);
     pinMode(B_ENABLE, OUTPUT);
     pinMode(B_PHASE, OUTPUT);
+
+    digitalWrite(A_ENABLE, HIGH);
+    digitalWrite(B_ENABLE, HIGH);
 }
 
 void Door::open()
@@ -39,10 +32,10 @@ void Door::open()
     targetState = OPEN;
 
     if (state == CLOSED) {
-        moveHalfSteps(STEPS_CLOSED_TO_OPEN, 1);
+        moveSteps(STEPS_CLOSED_TO_OPEN, 1);
     }
     else if (state == HALF) {
-        moveHalfSteps(STEPS_HALF_TO_OPEN, 1);
+        moveSteps(STEPS_HALF_TO_OPEN, 1);
     }
 }
 
@@ -55,10 +48,10 @@ void Door::close()
     targetState = CLOSED;
 
     if (state == OPEN) {
-        moveHalfSteps(STEPS_CLOSED_TO_OPEN, -1);
+        moveSteps(STEPS_CLOSED_TO_OPEN, -1);
     }
     else if (state == HALF) {
-        moveHalfSteps(STEPS_CLOSED_TO_HALF, -1);
+        moveSteps(STEPS_CLOSED_TO_HALF, -1);
     }
 }
 
@@ -71,14 +64,14 @@ void Door::moveToHalf()
     targetState = HALF;
 
     if (state == CLOSED) {
-        moveHalfSteps(STEPS_CLOSED_TO_HALF, 1);
+        moveSteps(STEPS_CLOSED_TO_HALF, 1);
     }
     else if (state == OPEN) {
-        moveHalfSteps(STEPS_HALF_TO_OPEN, -1);
+        moveSteps(STEPS_HALF_TO_OPEN, -1);
     }
 }
 
-void Door::moveHalfSteps(int numberOfSteps, int direction)
+void Door::moveSteps(int numberOfSteps, int direction)
 {
     stepsRemaining = numberOfSteps;
     stepDirection = direction;
@@ -98,32 +91,44 @@ void Door::update()
 
     unsigned long now = millis();
 
-    if (now - lastStepTime < 5) {
+    if (now - lastStepTime < 2) { //Only uppdate motor position every 2 miliseconds
         return;
     }
 
-    lastStepTime = now;
+    lastStepTime = now; 
 
-    digitalWrite(A_ENABLE, halfStepSequence[halfStepNumber][0]);
-    digitalWrite(A_PHASE,  halfStepSequence[halfStepNumber][1]);
-    digitalWrite(B_ENABLE, halfStepSequence[halfStepNumber][2]);
-    digitalWrite(B_PHASE,  halfStepSequence[halfStepNumber][3]);
+    stepNumber += stepDirection; //Updating StepNumber in set direction
 
-    halfStepNumber += stepDirection;
-
-    if (halfStepNumber > 7) {
-        halfStepNumber = 0;
+    if (stepNumber >= stepsPerCycle) { // Looping back to first microstep if the motor has done a whole step in positive direction
+        stepNumber = 0;
     }
 
-    if (halfStepNumber < 0) {
-        halfStepNumber = 7;
+    if (stepNumber < 0) { // Looping back to last microstep if the motor has done a whole step in negative direction
+        stepNumber = stepsPerCycle-1; 
     }
 
     stepsRemaining--;
 
-    if (stepsRemaining == 0) {
+    if (stepsRemaining == 0) { //Uppdating state if the motor is at its target
         state = targetState;
     }
+
+  float angle = TWO_PI * stepNumber / stepsPerCycle; //Finding phase/angle in relation to one cycle
+
+  float currentA = cos(angle)*4095; // Finding dac output for both motorcoils in relation to the angle
+  float currentB = sin(angle)*4095;
+
+ 
+  digitalWrite(A_PHASE, currentA >= 0 ? HIGH : LOW); //Setting current direction over coils
+  digitalWrite(B_PHASE, currentB >= 0 ? HIGH : LOW);
+
+
+  int valueA = (int)roundf(fabsf(currentA)); //Sending positive integer values to the dac
+  int valueB = (int)roundf(fabsf(currentB));
+
+  set_dac(valueB, valueA);
+
+
 }
 
 void Door::disableMotor()
