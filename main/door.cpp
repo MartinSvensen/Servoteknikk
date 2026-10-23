@@ -23,6 +23,7 @@ void Door::begin()
     digitalWrite(B_ENABLE, HIGH);
 }
 
+// Ignore new movement commands until the current movement is complete.
 void Door::open()
 {
     if (isMoving()) {
@@ -71,6 +72,7 @@ void Door::moveToHalf()
     }
 }
 
+// Schedule a non-blocking movement, executed one step at a time in update().
 void Door::moveSteps(int numberOfSteps, int direction)
 {
     stepsRemaining = numberOfSteps;
@@ -83,6 +85,7 @@ bool Door::isMoving() const
     return stepsRemaining > 0;
 }
 
+// Advance the stepper motor without blocking the main loop.
 void Door::update()
 {
     if (!isMoving()) {
@@ -91,39 +94,39 @@ void Door::update()
 
     unsigned long now = millis();
 
-    if (now - lastStepTime < 2) { //Only uppdate motor position every 2 miliseconds
+    if (now - lastStepTime < 2) { // Limit stepping to one step every 2 ms.
         return;
     }
 
     lastStepTime = now; 
 
-    stepNumber += stepDirection; //Updating StepNumber in set direction
+    stepNumber += stepDirection; 
 
-    if (stepNumber >= stepsPerCycle) { // Looping back to first microstep if the motor has done a whole step in positive direction
+    if (stepNumber >= stepsPerCycle) { // Wrap the phase index after a complete cycle.
         stepNumber = 0;
     }
 
-    if (stepNumber < 0) { // Looping back to last microstep if the motor has done a whole step in negative direction
+    if (stepNumber < 0) { // Wrap the phase index in the reverse direction.
         stepNumber = stepsPerCycle-1; 
     }
 
     stepsRemaining--;
 
-    if (stepsRemaining == 0) { //Uppdating state if the motor is at its target
+    if (stepsRemaining == 0) { // Update the logical door state only after movement finishes.
         state = targetState;
     }
 
-  float angle = TWO_PI * stepNumber / stepsPerCycle; //Finding phase/angle in relation to one cycle
+  float angle = TWO_PI * stepNumber / stepsPerCycle; // Convert the step index to an electrical phase angle.
 
-  float currentA = cos(angle)*4095; // Finding dac output for both motorcoils in relation to the angle
+  float currentA = cos(angle)*4095; // Generate sinusoidal coil drive values.
   float currentB = sin(angle)*4095;
 
  
-  digitalWrite(A_PHASE, currentA >= 0 ? HIGH : LOW); //Setting current direction over coils
+  digitalWrite(A_PHASE, currentA >= 0 ? HIGH : LOW); // Set coil polarity based on the sign of each value.
   digitalWrite(B_PHASE, currentB >= 0 ? HIGH : LOW);
 
 
-  int valueA = (int)roundf(fabsf(currentA)); //Sending positive integer values to the dac
+  int valueA = (int)roundf(fabsf(currentA)); // The DAC receives magnitudes; polarity is controlled separately.
   int valueB = (int)roundf(fabsf(currentB));
 
   set_dac(valueB, valueA);

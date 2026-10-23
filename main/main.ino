@@ -22,8 +22,9 @@ enum MenuState
 };
 
 MenuState menuState = MAIN_MENU;
-int selectedHallFloor = 0; // Indeks 0-7 tilsvarer etasje 1-8
+int selectedHallFloor = 0; // Floor indices 0-7 represent floors 1-8.
 
+// Displays the options for the current menu state.
 void printMenu()
 {
     Serial.println();
@@ -70,53 +71,18 @@ void printMenu()
     Serial.println("m: Vis menyen igjen");
 }
 
-void handleMenu() 
+// Processes one Serial input character based on the current menu state.
+void handleMenu()
 {
-    static char pendingKey = '\0';
-    static bool hasInput = false;
-    static bool invalidInput = false;
-
     if (Serial.available() == 0)
     {
         return;
     }
 
-    char received = Serial.read();
+    char key = Serial.read();
 
-    // Samle tegn fram til linjeskift.
-    if (received != '\n' && received != '\r')
+    if (key == '\n' || key == '\r')
     {
-        if (!hasInput)
-        {
-            pendingKey = received;
-            hasInput = true;
-        }
-        else
-        {
-            // Flere enn ett tegn gjør hele linjen ugyldig.
-            invalidInput = true;
-        }
-
-        return;
-    }
-
-    // Ignorer tomme linjer.
-    if (!hasInput)
-    {
-        return;
-    }
-
-    char key = pendingKey;
-    bool rejectInput = invalidInput;
-
-    // Nullstill til neste linje.
-    pendingKey = '\0';
-    hasInput = false;
-    invalidInput = false;
-
-    if (rejectInput)
-    {
-        Serial.println("Skriv bare ett tegn per linje.");
         return;
     }
 
@@ -217,6 +183,7 @@ void handleMenu()
     }
 }
 
+// Tracks encoder pulses whenever the interrupt is triggered.
 void encoderInterrupt()
 {
     motor.encoderTrack();
@@ -241,11 +208,12 @@ void setup()
     printMenu();
 }
 
+// Runs the non-blocking elevator, motor, and door control logic.
 void loop()
 {
     handleMenu();
     door.update();
-    
+
     static unsigned long lastUpdate = 0;
     static unsigned long lastPrint = 0;
     static bool checkingArrival = false;
@@ -257,6 +225,7 @@ void loop()
 
     unsigned long now = millis();
 
+    // Keep the door open for two seconds before closing it.
     if (doorCycleActive)
     {
         if (door.isOpen() && !door.isMoving())
@@ -280,10 +249,12 @@ void loop()
         }
     }
 
+    // Update elevator control every 10 ms.
     if (now - lastUpdate >= 10)
     {
         lastUpdate = now;
 
+        // Do not select a new target while the door cycle is active.
         if (!doorCycleActive)
         {
             int currentFloor = elevator.getCurrentFloor();
@@ -306,7 +277,7 @@ void loop()
 
         motor.update(targetPosition);
 
-        // Et nytt mål trenger en ny ankomstsjekk
+        // Reset arrival verification when the target floor changes.
         if (targetFloor != previousTargetFloor)
         {
             checkingArrival = false;
@@ -315,39 +286,40 @@ void loop()
 
         long positionError = motor.getPosition() - targetPosition;
 
+        // Confirm arrival for 300 ms before opening the door.
         if (!doorCycleActive &&
-    elevator.hasRequest(targetFloor) &&
-    abs(positionError) <= 5)
-{
-    if (!checkingArrival)
-    {
-        arrivalStart = now;
-        checkingArrival = true;
-    }
+            elevator.hasRequest(targetFloor) &&
+            abs(positionError) <= 5)
+        {
+            if (!checkingArrival)
+            {
+                arrivalStart = now;
+                checkingArrival = true;
+            }
 
-    if (now - arrivalStart >= 300)
-    {
-        elevator.updateCurrentFloor(targetFloor);
-        elevator.clearRequest(targetFloor);
-        cabinButtons[targetFloor].reset();
+            if (now - arrivalStart >= 300)
+            {
+                elevator.updateCurrentFloor(targetFloor);
+                elevator.clearRequest(targetFloor);
+                cabinButtons[targetFloor].reset();
 
-        doorCycleActive = true;
-        doorOpenTimerStarted = false;
-        door.open();
+                doorCycleActive = true;
+                doorOpenTimerStarted = false;
+                door.open();
 
-        checkingArrival = false;
-    }
-}
-else
-{
-    checkingArrival = false;
-}
+                checkingArrival = false;
+            }
+        }
+        else
+        {
+            checkingArrival = false;
+        }
 
         if (now - lastPrint >= 100)
         {
             lastPrint = now;
-            // Gir oss posisjonen til motoren hvert 100. millisekund
-            //Serial.println(motor.getPosition());
+            // Optional position output for debugging.
+            // Serial.println(motor.getPosition());
         }
     }
 }

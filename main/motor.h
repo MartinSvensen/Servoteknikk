@@ -4,11 +4,12 @@
 class Motor
 {
 private:
-    // Medlemsvariabler kommer her
+    // Encoder position and recent samples used for velocity estimation.
     volatile long int encoderReadout{0};
     int reads[3]{0, 0, 0};
     unsigned long readTimes[3]{0, 0, 0};
 
+    // PID controller state.
     float integral{0};
     long previousError{0};
     unsigned long lastTime{0};
@@ -19,10 +20,12 @@ private:
     void stop();
 
 public:
-    // Metoder kommer her
+    // Initialize motor and encoder pins.
     void begin();
+    // Update encoder position on an interrupt.
     void encoderTrack();
     long getPosition() const;
+    // Apply PID control using the target encoder position.
     void update(int setpoint);
 };
 

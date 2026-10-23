@@ -14,7 +14,7 @@ Elevator::Elevator()
     }
 }
 
-// Used for debugging, no special use in the final implementation.
+// Prints the request queue for debugging.
 void Elevator::printUpRequests() const
 {
     Serial.print("upRequests (etasje 1–8): ");
@@ -39,7 +39,7 @@ bool Elevator::hasRequest(int floor) const
     return upRequests_[floor] || downRequests_[floor];
 }
 
-// Hjelpefunksjoner for updateDirection() for å sjekke om det finnes forespørsler over eller under heisen
+// Check for pending requests relative to the current floor.
 
 bool Elevator::hasRequestAbove()
 {
@@ -66,7 +66,7 @@ bool Elevator::hasRequestBelow()
     return false;
 }
 
-// Legger til og fjerner forespørsler fra hallen og kabinen.
+// Hall requests retain the requested travel direction.
 
 void Elevator::addHallRequest(int floor, Direction requestDirection)
 {
@@ -84,6 +84,7 @@ void Elevator::addHallRequest(int floor, Direction requestDirection)
         downRequests_[floor] = true;
     }
 }
+// Cabin requests are queued according to the destination floor.
 void Elevator::addCabinRequest(int floor)
 {
     if (floor < 0 || floor >= FLOOR_COUNT)
@@ -111,7 +112,7 @@ void Elevator::clearRequest(int floor)
     downRequests_[floor] = false;
 }
 
-// Brukes når posisjonssystemet har bestemt hvilken etasje heisen er på.
+// The caller supplies the floor determined by the position system.
 
 void Elevator::updateCurrentFloor(int floor)
 {
@@ -127,14 +128,8 @@ int Elevator::getCurrentFloor()
     return currentFloor_;
 }
 
-/*
-Når heisen er IDLE, prioriteres forespørsler over currentFloor.
-Hvis ingen finnes over, sjekkes forespørsler under.
-
-TODO:
-Når posisjonssystemet er implementert, kan denne strategien
-endres til å velge retning basert på nærmeste forespørsel.
-*/
+// Continue in the current direction while requests remain ahead.
+// When idle, search above the current floor before searching below.
 
 void Elevator::updateDirection()
 {
@@ -198,6 +193,8 @@ Direction Elevator::getDirection()
     return direction_;
 }
 
+// Select a requested floor ahead of the encoder position.
+// Replace the target only if the new request is closer in the travel direction.
 void Elevator::updateTargetFloor(long position)
 {
     const int pulsesPerFloor = 2096;
@@ -261,15 +258,9 @@ int Elevator::getTargetFloor()
     return targetFloor_;
 }
 
-/*
-currentFloor må være oppdatert før shouldStop() kalles.
-
-Hvis heisen er på en etasje med en forespørsel i samme retning
-som heisen går, skal den stoppe.
-
-Hvis forespørselen er i motsatt retning, stopper heisen bare
-dersom det ikke finnes flere forespørsler videre i gjeldende retning.
-*/
+// Requires currentFloor_ to be updated before calling.
+// Stop for matching-direction requests, or opposite-direction requests
+// when no further requests remain ahead.
 
 bool Elevator::shouldStop()
 {

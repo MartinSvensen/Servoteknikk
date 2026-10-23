@@ -21,6 +21,7 @@ void Motor::begin()
     lastTime = micros();
 }
 
+// Called by the encoder interrupt to track position and recent samples.
 void Motor::encoderTrack()
 {
     if (digitalRead(21) == 1)
@@ -31,17 +32,18 @@ void Motor::encoderTrack()
     {
         encoderReadout++;
     }
-    // keep track of times for the last three reads
+    // Keep the three most recent samples for velocity estimation.
     readTimes[0] = readTimes[1];
     readTimes[1] = readTimes[2];
     readTimes[2] = millis();
 
-    // keep track of values for the last three reads
+
     reads[0] = reads[1];
     reads[1] = reads[2];
     reads[2] = encoderReadout;
 }
 
+// Read the encoder count without interruption during the copy.
 long Motor::getPosition() const
 {
     noInterrupts();
@@ -51,6 +53,7 @@ long Motor::getPosition() const
     return position;
 }
 
+// Compute the motor command from position error and measured rate of change.
 float Motor::PID_frame(int setpoint)
 {
     long sensor = getPosition();
@@ -61,15 +64,15 @@ float Motor::PID_frame(int setpoint)
 
     long error = sensor - setpoint;
 
-    // P-leddet
+    // Proportional contribution.
     float sum = P * error;
 
-    // I-leddet
+    // Accumulated error contribution (gain is currently zero).
     integral += numInteg(error, previousError);
     sum += I * integral;
     previousError = error;
 
-    // D-leddet
+    // Derivative contribution based on recent encoder samples.
     if (D != 0)
     {
         sum += D * numDeriv();
@@ -97,6 +100,7 @@ void Motor::update(int setpoint)
     int motorState = output >= 0 ? HIGH : LOW;
     float pwm = abs(output);
 
+    // Limit nonzero PWM output to the configured operating range.
     pwm = constrain(pwm, 10.0f, 100.0f);
 
     digitalWrite(5, LOW);
@@ -104,6 +108,7 @@ void Motor::update(int setpoint)
     analogWrite(7, (int)pwm);
 }
 
+// Integrate position error using the trapezoidal rule.
 float Motor::numInteg(long error, long previousError)
 {
     unsigned long currentTime = micros();
@@ -118,12 +123,13 @@ float Motor::numInteg(long error, long previousError)
     return averageError * dt;
 }
 
+// Estimate the position derivative from three time-stamped samples.
 float Motor::numDeriv()
 {
     long positions[3];
     unsigned long times[3];
 
-    // Kopier hele målehistorikken uten avbrudd
+    // Copy ISR-updated samples atomically.
     noInterrupts();
 
     for (int i = 0; i < 3; i++)
@@ -134,6 +140,7 @@ float Motor::numDeriv()
 
     interrupts();
 
+    // Ignore stale measurements or invalid time intervals.
     if (millis() - times[2] >= 100)
     {
         return 0;

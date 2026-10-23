@@ -8,6 +8,7 @@ void Button::begin() {
     updateLED();
 }
 
+// Keep the LED synchronized with the button request state.
 void Button::press() {
     pressed = true;
     updateLED();
@@ -22,6 +23,7 @@ bool Button::isPressed() const {
     return pressed;
 }
 
+// Indicate an active request by turning on the assigned LED.
 void Button::updateLED() {
     digitalWrite(ledPin, pressed ? HIGH : LOW);
 }
