@@ -2,6 +2,7 @@
 #include "Elevator.h"
 #include "Motor.h"
 #include "door.h"
+#include "Display.h"
 
 CabinButton cabinButtons[8] = {
     CabinButton{1, 49}, CabinButton{2, 48},
@@ -12,6 +13,7 @@ CabinButton cabinButtons[8] = {
 Elevator elevator;
 Motor motor;
 Door door;
+Display display;
 
 enum MenuState
 {
@@ -194,6 +196,8 @@ void setup()
     Serial.begin(9600);
     motor.begin();
     door.begin();
+    display.begin();
+    display.update(motor.getPosition(), elevator.getDirection());
 
     attachInterrupt(
         digitalPinToInterrupt(20),
@@ -276,6 +280,9 @@ void loop()
         int targetPosition = targetFloor * 2096;
 
         motor.update(targetPosition);
+
+        // Show the nearest floor during travel and the current direction.
+        display.update(motor.getPosition(), elevator.getDirection());
 
         // Reset arrival verification when the target floor changes.
         if (targetFloor != previousTargetFloor)
