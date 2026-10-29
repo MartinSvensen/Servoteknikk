@@ -16,6 +16,9 @@ Display::Display() : lcd(41, 40, 37, 36, 35, 34) {}
 void Display::begin()
 {
     lcd.begin(16, 2);
+    pinMode(4, OUTPUT);
+    digitalWrite(4, HIGH);
+
     lcd.createChar(0, arrowUp);
     lcd.createChar(1, arrowDown);
 
